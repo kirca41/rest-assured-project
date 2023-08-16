@@ -20,6 +20,7 @@ import org.springframework.boot.test.web.server.LocalServerPort
 class BookControllerTest {
 
     private val baseUrl = "/api/books"
+
     @LocalServerPort
     private var port: Int = 0
 
@@ -27,6 +28,8 @@ class BookControllerTest {
     fun setup() {
         RestAssured.port = port
     }
+
+    // TODO: Think of better names for tests
 
     @Test
     fun `it should a list of books with default parameters`() {
@@ -124,7 +127,7 @@ class BookControllerTest {
             authorId = 3
         )
 
-        given()
+        val addedBookId = given()
             .contentType(ContentType.JSON)
             .body(bookAddDto)
             .log().all()
@@ -134,6 +137,18 @@ class BookControllerTest {
             .log().all()
             .statusCode(201)
             .header("Location", matchesPattern("$baseUrl/\\d+"))
+            .extract()
+            .header("Location")
+            .split("/")
+            .last()
+
+        given()
+            .log().all()
+            .`when`()
+            .get("$baseUrl/$addedBookId")
+            .then()
+            .log().all()
+            .statusCode(200)
             .body("title", equalTo(bookAddDto.title))
             .body("isbn", equalTo(bookAddDto.isbn))
             .body("price", equalTo(bookAddDto.price.toFloat()))
@@ -152,7 +167,7 @@ class BookControllerTest {
             title = "The Lost Symbol",
             isbn = "0385504225",
             price = 8.50,
-            quantityInStock =  10,
+            quantityInStock = 10,
             category = Category.THRILLER,
             authorId = 1
         )
