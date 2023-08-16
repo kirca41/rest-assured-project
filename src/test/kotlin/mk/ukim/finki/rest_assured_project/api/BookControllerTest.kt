@@ -12,8 +12,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.MethodSource
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
+import kotlin.math.ceil
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -32,7 +37,7 @@ class BookControllerTest {
     // TODO: Think of better names for tests
 
     @Test
-    fun `it should a list of books with default parameters`() {
+    fun `it should return a list of books with default parameters`() {
         given()
             .`when`()
             .log().all()
@@ -41,6 +46,74 @@ class BookControllerTest {
             .log().all()
             .statusCode(200)
             .body("content.size()", greaterThan(0))
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["1", "2", "3", "10"])
+    fun `it should return the first page of books with the given size`(size: Int) {
+        val page = 0
+        val totalElements =
+            given()
+                .log().all()
+                .`when`()
+                .get(baseUrl)
+                .then()
+                .log().all()
+                .extract()
+                .path<Int>("totalElements")
+
+        val totalPages = if (size >= totalElements) 1 else ceil(1.0 * totalElements / size).toInt()
+        val numberOfElements = if (size >= totalElements) totalElements else size
+        val last = size >= totalElements
+
+        given()
+            .log().all()
+            .`when`()
+            .get("$baseUrl?page=$page&size=$size")
+            .then()
+            .log().all()
+            .statusCode(200)
+            .body("content.size()", greaterThan(0))
+            .body("first", equalTo(true))
+            .body("last", equalTo(last))
+            .body("totalElements", equalTo(totalElements))
+            .body("totalPages", equalTo(totalPages))
+            .body("numberOfElements", equalTo(numberOfElements))
+    }
+
+    // TODO: Should I add test for intermediary page?
+
+    @ParameterizedTest
+    @ValueSource(strings = ["1", "2", "3", "10"])
+    fun `it should return the last page of books with the given size`(size: Int) {
+        val response =
+            given()
+                .log().all()
+                .`when`()
+                .get(baseUrl)
+                .then()
+                .log().all()
+                .extract()
+                .response()
+
+        val totalElements = response.path<Int>("totalElements")
+        val totalPages = if (size >= totalElements) 1 else ceil(1.0 * totalElements / size).toInt()
+        val numberOfElements = if (totalElements % size == 0) size else totalElements % size
+        val first = size >= totalElements
+
+        given()
+            .log().all()
+            .`when`()
+            .get("$baseUrl?page=${totalPages - 1}&size=$size")
+            .then()
+            .log().all()
+            .statusCode(200)
+            .body("content.size()", greaterThan(0))
+            .body("first", equalTo(first))
+            .body("last", equalTo(true))
+            .body("totalElements", equalTo(totalElements))
+            .body("totalPages", equalTo(totalPages))
+            .body("numberOfElements", equalTo(numberOfElements))
     }
 
     @Test
@@ -79,10 +152,9 @@ class BookControllerTest {
         assertEquals(content, booksSortedByTitleDescending)
     }
 
-    @Test
-    fun `it should return a list of books filtered by category`() {
-        val category = Category.THRILLER
-
+    @ParameterizedTest
+    @EnumSource(Category::class)
+    fun `it should return a list of books filtered by category`(category: Category) {
         given()
             .param("category", category)
             .log().all()
