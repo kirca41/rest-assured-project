@@ -7,12 +7,14 @@ import mk.ukim.finki.rest_assured_project.model.Book
 import mk.ukim.finki.rest_assured_project.model.dtos.BookAddDto
 import mk.ukim.finki.rest_assured_project.model.dtos.BookEditDto
 import mk.ukim.finki.rest_assured_project.model.enums.Category
+import org.assertj.core.util.Strings
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
@@ -25,6 +27,12 @@ import kotlin.math.ceil
 class BookControllerTest {
 
     private val baseUrl = "/api/books"
+    private val BLANK_ISBN_ERROR_MESSAGE = "Book ISBN must not be blank!"
+    private val BLANK_TITLE_ERROR_MESSAGE = "Book title must not be blank!"
+    private val NONPOSITIVE_PRICE_ERROR_MESSAGE = "Book price must not be negative!"
+    private val NONPOSITIVE_QUANTITY_ERROR_MESSAGE = "Book quantity in stock must not be negative!"
+    private val INVALID_ISBN_ERROR_MESSAGE = "ISBN is not valid!"
+    private val ISBN_NOT_UNIQUE_ERROR_MESSAGE = "A book with this ISBN already exists in the database!"
 
     @LocalServerPort
     private var port: Int = 0
@@ -236,6 +244,121 @@ class BookControllerTest {
             .body("author.firstName", not(emptyOrNullString()))
             .body("author.lastName", not(emptyOrNullString()))
             .body("author.country", not(emptyOrNullString()))
+    }
+
+    @Test
+    fun `it should return bad request and appropriate error messages for blank fields`() {
+        val bookAddDto = BookAddDto(
+            isbn = "",
+            title = "",
+            price = 9.50,
+            quantityInStock = 50,
+            category = Category.FANTASY,
+            authorId = 3
+        )
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(bookAddDto)
+            .log().all()
+            .`when`()
+            .post("/add")
+            .then()
+            .log().all()
+            .statusCode(400)
+            .body("errors.size()", greaterThan(0))
+            .body(
+                "errors", hasItems(
+                        BLANK_TITLE_ERROR_MESSAGE,
+                        BLANK_ISBN_ERROR_MESSAGE
+                )
+            )
+    }
+
+    @Test
+    fun `it should return bad request and appropriate error messages for nonpositive valued fields`() {
+        val bookAddDto = BookAddDto(
+            isbn = "0306406152",
+            title = "Error-Correction Coding for Digital Communications",
+            price = -18.00,
+            quantityInStock = -150,
+            category = Category.FANTASY,
+            authorId = 3
+        )
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(bookAddDto)
+            .log().all()
+            .`when`()
+            .post("/add")
+            .then()
+            .log().all()
+            .statusCode(400)
+            .body("errors.size()", greaterThan(0))
+            .body(
+                "errors", hasItems(
+                    NONPOSITIVE_PRICE_ERROR_MESSAGE,
+                    NONPOSITIVE_QUANTITY_ERROR_MESSAGE
+                )
+            )
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [
+        "1234567890", "987654321X", "abcdefghij", "0112112425", "0000100000", // length 10
+        "1234567890123", "987654321012X", "abcdefghij456", "5555555555555", "0000000050000", // length 13
+        "123456", "98765432101", "fjkhakjs4567", "99999999999999", "invalid_isbn" // arbitrary length
+    ])
+    fun `it should return bad request and invalid isbn error message`(isbn: String) {
+        val bookAddDto = BookAddDto(
+            isbn = isbn,
+            title = "Invalid Book",
+            price = 5.50,
+            quantityInStock = 100,
+            category = Category.FANTASY,
+            authorId = 3
+        )
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(bookAddDto)
+            .log().all()
+            .`when`()
+            .post("/add")
+            .then()
+            .log().all()
+            .statusCode(400)
+            .body("errors.size()", greaterThan(0))
+            .body("errors", hasItem(INVALID_ISBN_ERROR_MESSAGE))
+    }
+
+    @Test
+    fun `it should return bad request and isbn already exists error message`() {
+        val bookAddDto = BookAddDto(
+            isbn = "0385504225",
+            title = "The Lost Symbol",
+            price = 20.00,
+            quantityInStock = 20,
+            category = Category.FANTASY,
+            authorId = 1
+        )
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(bookAddDto)
+            .log().all()
+            .`when`()
+            .post("/add")
+            .then()
+            .log().all()
+            .statusCode(400)
+            .body("errors.size()", greaterThan(0))
+            .body(
+                "errors", hasItem(
+                    ISBN_NOT_UNIQUE_ERROR_MESSAGE
+                )
+            )
     }
 
     @Test
