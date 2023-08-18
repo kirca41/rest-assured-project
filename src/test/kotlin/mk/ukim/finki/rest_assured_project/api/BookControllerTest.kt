@@ -269,8 +269,8 @@ class BookControllerTest {
             .body("errors.size()", greaterThan(0))
             .body(
                 "errors", hasItems(
-                        BLANK_TITLE_ERROR_MESSAGE,
-                        BLANK_ISBN_ERROR_MESSAGE
+                    BLANK_TITLE_ERROR_MESSAGE,
+                    BLANK_ISBN_ERROR_MESSAGE
                 )
             )
     }
@@ -305,11 +305,13 @@ class BookControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = [
-        "1234567890", "987654321X", "abcdefghij", "0112112425", "0000100000", // length 10
-        "1234567890123", "987654321012X", "abcdefghij456", "5555555555555", "0000000050000", // length 13
-        "123456", "98765432101", "fjkhakjs4567", "99999999999999", "invalid_isbn" // arbitrary length
-    ])
+    @ValueSource(
+        strings = [
+            "1234567890", "987654321X", "abcdefghij", "0112112425", "0000100000", // length 10
+            "1234567890123", "987654321012X", "abcdefghij456", "5555555555555", "0000000050000", // length 13
+            "123456", "98765432101", "fjkhakjs4567", "99999999999999", "invalid_isbn" // arbitrary length
+        ]
+    )
     fun `it should return bad request and invalid isbn error message`(isbn: String) {
         val bookAddDto = BookAddDto(
             isbn = isbn,
@@ -362,6 +364,30 @@ class BookControllerTest {
     }
 
     @Test
+    fun `it should return not found for invalid author id`() {
+        val bookAddDto = BookAddDto(
+            isbn = "9780553801477",
+            title = "A Dance with Dragons (A Song of Ice and Fire)",
+            price = 15.00,
+            quantityInStock = 2,
+            category = Category.FANTASY,
+            authorId = 777
+        )
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(bookAddDto)
+            .log().all()
+            .`when`()
+            .post("/add")
+            .then()
+            .log().all()
+            .statusCode(404)
+            .body("errors.size()", greaterThan(0))
+            .body("errors", equalTo("Author with id [${bookAddDto.authorId}] does not exist!"))
+    }
+
+    @Test
     fun `it should update an existing book's price and return its details`() {
         val bookEditDto = BookEditDto(
             id = 1,
@@ -386,7 +412,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return bad request when updating a book with invalid id`() {
+    fun `it should return not found when updating a book with invalid id`() {
         val bookEditDto = BookEditDto(
             id = 999,
             title = "The Lost Symbol",
@@ -410,7 +436,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return bad request when updating a book with invalid author id`() {
+    fun `it should return not found when updating a book with invalid author id`() {
         val bookEditDto = BookEditDto(
             id = 1,
             title = "The Lost Symbol",
