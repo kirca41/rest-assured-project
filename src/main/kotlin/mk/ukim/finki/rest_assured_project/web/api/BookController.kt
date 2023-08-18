@@ -49,8 +49,7 @@ class BookController(
             .let { ResponseEntity.created(URI("/api/books/${it.id}")).body(it) }
 
     @PutMapping("/edit")
-    fun editBook(@RequestBody @Validated bookDto: BookEditDto
-    ): ResponseEntity<Book> =
+    fun editBook(@RequestBody @Validated bookDto: BookEditDto): ResponseEntity<Book> =
         this.bookService.updateBook(bookDto).let { ResponseEntity.ok(it) }
 
     @DeleteMapping("/delete/{id}")

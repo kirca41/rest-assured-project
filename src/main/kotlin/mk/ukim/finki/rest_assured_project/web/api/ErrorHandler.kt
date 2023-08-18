@@ -26,7 +26,7 @@ class ErrorHandler: ResponseEntityExceptionHandler() {
     )
     @ResponseStatus(HttpStatus.NOT_FOUND)
     fun onNotFoundException(exception: RuntimeException): Map<String, String> =
-        mapOf("error" to (exception.message ?: ""))
+        mapOf("errors" to (exception.message ?: ""))
 
     override fun handleMethodArgumentNotValid(
         ex: MethodArgumentNotValidException,

@@ -386,6 +386,79 @@ class BookControllerTest {
     }
 
     @Test
+    fun `it should return bad request when updating a book with invalid id`() {
+        val bookEditDto = BookEditDto(
+            id = 999,
+            title = "The Lost Symbol",
+            isbn = "9780141033570",
+            price = 8.50,
+            quantityInStock = 10,
+            category = Category.THRILLER,
+            authorId = 1
+        )
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(bookEditDto)
+            .log().all()
+            .`when`()
+            .put("/edit")
+            .then()
+            .log().all()
+            .statusCode(404)
+            .body("errors", equalTo("Book with id [${bookEditDto.id}] does not exist!"))
+    }
+
+    @Test
+    fun `it should return bad request when updating a book with invalid author id`() {
+        val bookEditDto = BookEditDto(
+            id = 1,
+            title = "The Lost Symbol",
+            isbn = "0385504225",
+            price = 8.50,
+            quantityInStock = 10,
+            category = Category.THRILLER,
+            authorId = 888
+        )
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(bookEditDto)
+            .log().all()
+            .`when`()
+            .put("/edit")
+            .then()
+            .log().all()
+            .statusCode(404)
+            .body("errors", equalTo("Author with id [${bookEditDto.authorId}] does not exist!"))
+    }
+
+
+    @Test
+    fun `it should return bad request and appropriate error messages when updating a book's isbn with an existing isbn`() {
+        val bookEditDto = BookEditDto(
+            id = 1,
+            title = "The Lost Symbol",
+            isbn = "9780385514231", // Another book's ISBN
+            price = 8.50,
+            quantityInStock = 10,
+            category = Category.THRILLER,
+            authorId = 1
+        )
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(bookEditDto)
+            .log().all()
+            .`when`()
+            .put("/edit")
+            .then()
+            .log().all()
+            .statusCode(400)
+            .body("errors", hasItem(ISBN_NOT_UNIQUE_ERROR_MESSAGE))
+    }
+
+    @Test
     fun `it should delete an existing book by its id`() {
         val id = 1
 
