@@ -507,7 +507,21 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should reduce the quantity in stock of the given book and returns it's updated details`() {
+    fun `it should return not found when deleting a book with invalid id`() {
+        val id = 555
+
+        given()
+            .log().all()
+            .`when`()
+            .delete("/delete/$id")
+            .then()
+            .log().all()
+            .statusCode(404)
+            .body("errors", equalTo("Book with id [$id] does not exist!"))
+    }
+
+    @Test
+    fun `it should reduce the quantity in stock of the given book and return it's updated details`() {
         val id = 3
         val amount = 2
 
