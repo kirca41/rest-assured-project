@@ -60,6 +60,11 @@ class BookController(
     fun buyBooks(
         @PathVariable id: Long,
         @RequestParam amount: Int
-    ): ResponseEntity<Book> =
-        this.bookService.buyBooks(id, amount).let { ResponseEntity.ok(it) }
+    ): ResponseEntity<*> =
+        if (amount <= 0) {
+            ResponseEntity.badRequest().body(mapOf("errors" to "Book amount to buy must be positive!"))
+        } else {
+            this.bookService.buyBooks(id, amount).let { ResponseEntity.ok(it) }
+        }
+
 }
