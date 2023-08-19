@@ -7,16 +7,13 @@ import mk.ukim.finki.rest_assured_project.model.Book
 import mk.ukim.finki.rest_assured_project.model.dtos.BookAddDto
 import mk.ukim.finki.rest_assured_project.model.dtos.BookEditDto
 import mk.ukim.finki.rest_assured_project.model.enums.Category
-import org.assertj.core.util.Strings
 import org.hamcrest.Matchers.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
-import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
@@ -338,7 +335,7 @@ class BookControllerTest {
     @Test
     fun `it should return bad request and isbn already exists error message`() {
         val bookAddDto = BookAddDto(
-            isbn = "0385504225",
+            isbn = "0618260307",
             title = "The Lost Symbol",
             price = 20.00,
             quantityInStock = 20,
@@ -438,7 +435,7 @@ class BookControllerTest {
     @Test
     fun `it should return not found when updating a book with invalid author id`() {
         val bookEditDto = BookEditDto(
-            id = 1,
+            id = 2,
             title = "The Lost Symbol",
             isbn = "0385504225",
             price = 8.50,
@@ -503,7 +500,7 @@ class BookControllerTest {
             .then()
             .log().all()
             .statusCode(404)
-            .body("error", equalTo("Book with id [$id] does not exist!"))
+            .body("errors", equalTo("Book with id [$id] does not exist!"))
     }
 
     @Test
@@ -553,6 +550,53 @@ class BookControllerTest {
             .log().all()
             .statusCode(200)
             .body("quantityInStock", equalTo(book.quantityInStock - amount))
+    }
+
+    @Test
+    fun `it should return not found for invalid id`() {
+        val id = 12345
+
+        given()
+            .log().all()
+            .param("amount", 1)
+            .`when`()
+            .post("/$id/buy")
+            .then()
+            .log().all()
+            .statusCode(404)
+            .body("errors", equalTo("Book with id [$id] does not exist!"))
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [0, -10])
+    fun `it should return bad request for nonpositive amounts`(amount: Int) {
+        val id = 1
+
+        given()
+            .log().all()
+            .param("amount", amount)
+            .`when`()
+            .post("/$id/buy")
+            .then()
+            .log().all()
+            .statusCode(400)
+            .body("errors", equalTo("Book amount to buy must be positive!"))
+    }
+
+    @Test
+    fun `it should return bad request for amount greater than available quantity in stock`() {
+        val id = 3
+        val amount = 11
+
+        given()
+            .log().all()
+            .param("amount", amount)
+            .`when`()
+            .post("/$id/buy")
+            .then()
+            .log().all()
+            .statusCode(400)
+            .body("errors", equalTo("Book with id [$id] has less than [$amount] copies left in stock!"))
     }
 
 }
