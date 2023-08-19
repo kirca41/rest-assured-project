@@ -40,10 +40,8 @@ class BookControllerTest {
         RestAssured.basePath = baseUrl
     }
 
-    // TODO: Think of better names for tests
-
     @Test
-    fun `it should return a list of books with default parameters`() {
+    fun `should return a list of books when given default parameters`() {
         given()
             .`when`()
             .log().all()
@@ -56,7 +54,7 @@ class BookControllerTest {
 
     @ParameterizedTest
     @ValueSource(strings = ["1", "2", "3", "10"])
-    fun `it should return the first page of books with the given size`(size: Int) {
+    fun `should return the first page of books with the given size`(size: Int) {
         val page = 0
         val totalElements =
             given()
@@ -93,7 +91,7 @@ class BookControllerTest {
 
     @ParameterizedTest
     @ValueSource(strings = ["1", "2", "3", "10"])
-    fun `it should return the last page of books with the given size`(size: Int) {
+    fun `should return the last page of books with the given size`(size: Int) {
         val response =
             given()
                 .log().all()
@@ -127,7 +125,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return a list of books sorted by id in ascending order`() {
+    fun `should return a list of books sorted by id in ascending order`() {
         val response = given()
             .log().all()
             .`when`()
@@ -144,7 +142,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return a list of books sorted by title in descending order`() {
+    fun `should return a list of books sorted by title in descending order`() {
         val response = given()
             .param("sortDirection", "desc")
             .param("sortBy", "title")
@@ -164,7 +162,7 @@ class BookControllerTest {
 
     @ParameterizedTest
     @EnumSource(Category::class)
-    fun `it should return a list of books filtered by category`(category: Category) {
+    fun `should return a list of books filtered by the given category`(category: Category) {
         given()
             .param("category", category)
             .log().all()
@@ -178,8 +176,8 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return details of a book with the given id`() {
-        val id = 1
+    fun `should return details of a book with the given id`() {
+        val id = 3
 
         given()
             .log().all()
@@ -200,7 +198,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should add a new book and return its location and details`() {
+    fun `should add a new book, return it's location and retrieve it's details successfully by the returned id`() {
         val bookAddDto = BookAddDto(
             isbn = "6258327656",
             title = "Silmarillion",
@@ -244,7 +242,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return bad request and appropriate error messages for blank fields`() {
+    fun `should return bad request and appropriate error messages for blank isbn and title`() {
         val bookAddDto = BookAddDto(
             isbn = "",
             title = "",
@@ -273,7 +271,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return bad request and appropriate error messages for nonpositive valued fields`() {
+    fun `should return bad request and appropriate error messages for nonpositive-valued fields`() {
         val bookAddDto = BookAddDto(
             isbn = "0306406152",
             title = "Error-Correction Coding for Digital Communications",
@@ -309,7 +307,7 @@ class BookControllerTest {
             "123456", "98765432101", "fjkhakjs4567", "99999999999999", "invalid_isbn" // arbitrary length
         ]
     )
-    fun `it should return bad request and invalid isbn error message`(isbn: String) {
+    fun `should return bad request and appropriate errors messsage for invalid isbn values`(isbn: String) {
         val bookAddDto = BookAddDto(
             isbn = isbn,
             title = "Invalid Book",
@@ -333,7 +331,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return bad request and isbn already exists error message`() {
+    fun `should return bad request and appropriate error message when adding a book with id that already exists in the database`() {
         val bookAddDto = BookAddDto(
             isbn = "0618260307",
             title = "The Lost Symbol",
@@ -361,7 +359,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return not found for invalid author id`() {
+    fun `should return not found and appropriate error message when adding a book with invalid author id`() {
         val bookAddDto = BookAddDto(
             isbn = "9780553801477",
             title = "A Dance with Dragons (A Song of Ice and Fire)",
@@ -385,7 +383,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should update an existing book's price and return its details`() {
+    fun `should update an existing book's price and return its details`() {
         val bookEditDto = BookEditDto(
             id = 1,
             title = "The Lost Symbol",
@@ -409,7 +407,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return not found when updating a book with invalid id`() {
+    fun `should return not found and appropriate error message when updating a book with invalid id`() {
         val bookEditDto = BookEditDto(
             id = 999,
             title = "The Lost Symbol",
@@ -433,9 +431,9 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return not found when updating a book with invalid author id`() {
+    fun `should return not found and appropriate error message when updating a book with invalid author id`() {
         val bookEditDto = BookEditDto(
-            id = 2,
+            id = 1,
             title = "The Lost Symbol",
             isbn = "0385504225",
             price = 8.50,
@@ -458,7 +456,7 @@ class BookControllerTest {
 
 
     @Test
-    fun `it should return bad request and appropriate error messages when updating a book's isbn with an existing isbn`() {
+    fun `should return bad request and appropriate error messages when updating a book's isbn with an existing book's isbn`() {
         val bookEditDto = BookEditDto(
             id = 1,
             title = "The Lost Symbol",
@@ -482,7 +480,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should delete an existing book by its id`() {
+    fun `should delete an existing book by its id`() {
         val id = 1
 
         given()
@@ -504,7 +502,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return not found when deleting a book with invalid id`() {
+    fun `should return not found and appropriate error message when deleting a book with invalid id`() {
         val id = 555
 
         given()
@@ -518,7 +516,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should reduce the quantity in stock of the given book and return it's updated details`() {
+    fun `should reduce the quantity in stock of the given book and return it's updated details`() {
         val id = 3
         val amount = 2
 
@@ -553,7 +551,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return not found for invalid id`() {
+    fun `should return not found and appropriate error message when buying a book with invalid id`() {
         val id = 12345
 
         given()
@@ -569,7 +567,7 @@ class BookControllerTest {
 
     @ParameterizedTest
     @ValueSource(ints = [0, -10])
-    fun `it should return bad request for nonpositive amounts`(amount: Int) {
+    fun `should return bad request and appropriate error message for nonpositive amounts when buying a book`(amount: Int) {
         val id = 1
 
         given()
@@ -584,7 +582,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `it should return bad request for amount greater than available quantity in stock`() {
+    fun `should return bad request and appropriate error message when buying amount greater than available quantity in stock`() {
         val id = 3
         val amount = 11
 
