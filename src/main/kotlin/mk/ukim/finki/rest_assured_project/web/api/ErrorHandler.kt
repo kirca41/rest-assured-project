@@ -21,12 +21,16 @@ class ErrorHandler: ResponseEntityExceptionHandler() {
 
     @ExceptionHandler(
         AuthorDoesNotExistException::class,
-        BookDoesNotExistException::class,
-        NotEnoughBooksAvailableInStockException::class
+        BookDoesNotExistException::class
     )
     @ResponseStatus(HttpStatus.NOT_FOUND)
     fun onNotFoundException(exception: RuntimeException): Map<String, String> =
-        mapOf("errors" to (exception.message ?: ""))
+        mapOf("errors" to exception.message!!)
+
+    @ExceptionHandler(NotEnoughBooksAvailableInStockException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun onNotEnoughBooksException(exception: NotEnoughBooksAvailableInStockException): Map<String, String> =
+        mapOf("errors" to exception.message!!)
 
     override fun handleMethodArgumentNotValid(
         ex: MethodArgumentNotValidException,
