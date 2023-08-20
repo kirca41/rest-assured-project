@@ -184,6 +184,40 @@ class BookControllerTest {
     }
 
     @Test
+    fun `should return details of a book with the given isbn`() {
+        val isbn = "0618260307"
+
+        given()
+            .param("isbn", isbn)
+            .`when`()
+            .get("/search")
+            .then()
+            .statusCode(200)
+            .body("title", not(emptyOrNullString()))
+            .body("isbn", not(emptyOrNullString()))
+            .body("price", greaterThan(0f))
+            .body("quantityInStock", greaterThanOrEqualTo(0))
+            .body("category", `in`(Category.values().map { it.name }))
+            .body("author.id", greaterThan(0))
+            .body("author.firstName", not(emptyOrNullString()))
+            .body("author.lastName", not(emptyOrNullString()))
+            .body("author.country", not(emptyOrNullString()))
+    }
+
+    @Test
+    fun `should return not found and appropriate error message when searching for book with non-existant isbn`() {
+        val isbn = "9780136006176"
+
+        given()
+            .param("isbn", isbn)
+            .`when`()
+            .get("/search")
+            .then()
+            .statusCode(404)
+            .body("errors", equalTo("Book with isbn [$isbn] does not exist!"))
+    }
+
+    @Test
     fun `should add a new book, return it's location and retrieve it's details successfully by the returned id`() {
         val bookAddDto = BookAddDto(
             isbn = "6258327656",
@@ -285,7 +319,7 @@ class BookControllerTest {
             "123456", "98765432101", "fjkhakjs4567", "99999999999999", "invalid_isbn" // arbitrary length
         ]
     )
-    fun `should return bad request and appropriate errors messsage for invalid isbn values`(isbn: String) {
+    fun `should return bad request and appropriate error messages for invalid isbn values`(isbn: String) {
         val bookAddDto = BookAddDto(
             isbn = isbn,
             title = "Invalid Book",

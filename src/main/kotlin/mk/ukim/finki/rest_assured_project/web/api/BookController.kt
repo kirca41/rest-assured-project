@@ -43,6 +43,10 @@ class BookController(
     fun getById(@PathVariable id: Long): ResponseEntity<Book> =
         this.bookService.getBookById(id).let { ResponseEntity.ok(it) }
 
+    @GetMapping("/search")
+    fun getByIsbn(@RequestParam isbn: String): ResponseEntity<Book> =
+        this.bookService.getBookByIsbn(isbn).let { ResponseEntity.ok(it) }
+
     @PostMapping("/add")
     fun addNewBook(@RequestBody @Validated bookAddDto: BookAddDto): ResponseEntity<Book> =
         this.bookService.createBook(bookAddDto)
