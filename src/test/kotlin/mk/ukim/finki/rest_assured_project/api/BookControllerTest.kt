@@ -2,6 +2,8 @@ package mk.ukim.finki.rest_assured_project.api
 
 import io.restassured.RestAssured
 import io.restassured.RestAssured.given
+import io.restassured.filter.log.RequestLoggingFilter
+import io.restassured.filter.log.ResponseLoggingFilter
 import io.restassured.http.ContentType
 import mk.ukim.finki.rest_assured_project.model.Book
 import mk.ukim.finki.rest_assured_project.model.dtos.BookAddDto
@@ -18,6 +20,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import kotlin.math.ceil
+
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -38,16 +41,15 @@ class BookControllerTest {
     fun setup() {
         RestAssured.port = port
         RestAssured.basePath = baseUrl
+        RestAssured.filters(RequestLoggingFilter(), ResponseLoggingFilter())
     }
 
     @Test
     fun `should return a list of books when given default parameters`() {
         given()
             .`when`()
-            .log().all()
             .get()
             .then()
-            .log().all()
             .statusCode(200)
             .body("content.size()", greaterThan(0))
     }
@@ -58,11 +60,9 @@ class BookControllerTest {
         val page = 0
         val totalElements =
             given()
-                .log().all()
                 .`when`()
                 .get()
                 .then()
-                .log().all()
                 .extract()
                 .path<Int>("totalElements")
 
@@ -71,13 +71,11 @@ class BookControllerTest {
         val last = size >= totalElements
 
         given()
-            .log().all()
             .param("page", page)
             .param("size", size)
             .`when`()
             .get()
             .then()
-            .log().all()
             .statusCode(200)
             .body("content.size()", greaterThan(0))
             .body("first", equalTo(true))
@@ -94,11 +92,9 @@ class BookControllerTest {
     fun `should return the last page of books with the given size`(size: Int) {
         val response =
             given()
-                .log().all()
                 .`when`()
                 .get()
                 .then()
-                .log().all()
                 .extract()
                 .response()
 
@@ -108,13 +104,11 @@ class BookControllerTest {
         val first = size >= totalElements
 
         given()
-            .log().all()
             .param("page", totalPages - 1)
             .param("size", size)
             .`when`()
             .get()
             .then()
-            .log().all()
             .statusCode(200)
             .body("content.size()", greaterThan(0))
             .body("first", equalTo(first))
@@ -127,7 +121,6 @@ class BookControllerTest {
     @Test
     fun `should return a list of books sorted by id in ascending order`() {
         val response = given()
-            .log().all()
             .`when`()
             .get()
 
@@ -135,7 +128,6 @@ class BookControllerTest {
         val booksSortedByIdAscending = content.sortedBy { it.id }
 
         response.then()
-            .log().all()
             .statusCode(200)
 
         assertEquals(content, booksSortedByIdAscending)
@@ -146,7 +138,6 @@ class BookControllerTest {
         val response = given()
             .param("sortDirection", "desc")
             .param("sortBy", "title")
-            .log().all()
             .`when`()
             .get()
 
@@ -154,7 +145,6 @@ class BookControllerTest {
         val booksSortedByTitleDescending = content.sortedByDescending { it.title }
 
         response.then()
-            .log().all()
             .statusCode(200)
 
         assertEquals(content, booksSortedByTitleDescending)
@@ -165,12 +155,10 @@ class BookControllerTest {
     fun `should return a list of books filtered by the given category`(category: Category) {
         given()
             .param("category", category)
-            .log().all()
             .param("category", category)
             .`when`()
             .get()
             .then()
-            .log().all()
             .statusCode(200)
             .body("content.every { it.category == '$category' }", equalTo(true))
     }
@@ -180,11 +168,9 @@ class BookControllerTest {
         val id = 3
 
         given()
-            .log().all()
             .`when`()
             .get("/$id")
             .then()
-            .log().all()
             .statusCode(200)
             .body("title", not(emptyOrNullString()))
             .body("isbn", not(emptyOrNullString()))
@@ -211,11 +197,9 @@ class BookControllerTest {
         val addedBookId = given()
             .contentType(ContentType.JSON)
             .body(bookAddDto)
-            .log().all()
             .`when`()
             .post("/add")
             .then()
-            .log().all()
             .statusCode(201)
             .header("Location", matchesPattern("$baseUrl/\\d+"))
             .extract()
@@ -224,11 +208,9 @@ class BookControllerTest {
             .last()
 
         given()
-            .log().all()
             .`when`()
             .get("/$addedBookId")
             .then()
-            .log().all()
             .statusCode(200)
             .body("title", equalTo(bookAddDto.title))
             .body("isbn", equalTo(bookAddDto.isbn))
@@ -255,11 +237,9 @@ class BookControllerTest {
         given()
             .contentType(ContentType.JSON)
             .body(bookAddDto)
-            .log().all()
             .`when`()
             .post("/add")
             .then()
-            .log().all()
             .statusCode(400)
             .body("errors.size()", greaterThan(0))
             .body(
@@ -284,11 +264,9 @@ class BookControllerTest {
         given()
             .contentType(ContentType.JSON)
             .body(bookAddDto)
-            .log().all()
             .`when`()
             .post("/add")
             .then()
-            .log().all()
             .statusCode(400)
             .body("errors.size()", greaterThan(0))
             .body(
@@ -320,11 +298,9 @@ class BookControllerTest {
         given()
             .contentType(ContentType.JSON)
             .body(bookAddDto)
-            .log().all()
             .`when`()
             .post("/add")
             .then()
-            .log().all()
             .statusCode(400)
             .body("errors.size()", greaterThan(0))
             .body("errors", hasItem(INVALID_ISBN_ERROR_MESSAGE))
@@ -344,11 +320,9 @@ class BookControllerTest {
         given()
             .contentType(ContentType.JSON)
             .body(bookAddDto)
-            .log().all()
             .`when`()
             .post("/add")
             .then()
-            .log().all()
             .statusCode(400)
             .body("errors.size()", greaterThan(0))
             .body(
@@ -372,11 +346,9 @@ class BookControllerTest {
         given()
             .contentType(ContentType.JSON)
             .body(bookAddDto)
-            .log().all()
             .`when`()
             .post("/add")
             .then()
-            .log().all()
             .statusCode(404)
             .body("errors.size()", greaterThan(0))
             .body("errors", equalTo("Author with id [${bookAddDto.authorId}] does not exist!"))
@@ -397,11 +369,9 @@ class BookControllerTest {
         given()
             .contentType(ContentType.JSON)
             .body(bookEditDto)
-            .log().all()
             .`when`()
             .put("/edit")
             .then()
-            .log().all()
             .statusCode(200)
             .body("price", equalTo(bookEditDto.price.toFloat()))
     }
@@ -421,11 +391,9 @@ class BookControllerTest {
         given()
             .contentType(ContentType.JSON)
             .body(bookEditDto)
-            .log().all()
             .`when`()
             .put("/edit")
             .then()
-            .log().all()
             .statusCode(404)
             .body("errors", equalTo("Book with id [${bookEditDto.id}] does not exist!"))
     }
@@ -445,11 +413,9 @@ class BookControllerTest {
         given()
             .contentType(ContentType.JSON)
             .body(bookEditDto)
-            .log().all()
             .`when`()
             .put("/edit")
             .then()
-            .log().all()
             .statusCode(404)
             .body("errors", equalTo("Author with id [${bookEditDto.authorId}] does not exist!"))
     }
@@ -470,11 +436,9 @@ class BookControllerTest {
         given()
             .contentType(ContentType.JSON)
             .body(bookEditDto)
-            .log().all()
             .`when`()
             .put("/edit")
             .then()
-            .log().all()
             .statusCode(400)
             .body("errors", hasItem(ISBN_NOT_UNIQUE_ERROR_MESSAGE))
     }
@@ -484,19 +448,15 @@ class BookControllerTest {
         val id = 1
 
         given()
-            .log().all()
             .`when`()
             .delete("/delete/$id")
             .then()
-            .log().all()
             .statusCode(200)
 
         given()
-            .log().all()
             .`when`()
             .get("/$id")
             .then()
-            .log().all()
             .statusCode(404)
             .body("errors", equalTo("Book with id [$id] does not exist!"))
     }
@@ -506,11 +466,9 @@ class BookControllerTest {
         val id = 555
 
         given()
-            .log().all()
             .`when`()
             .delete("/delete/$id")
             .then()
-            .log().all()
             .statusCode(404)
             .body("errors", equalTo("Book with id [$id] does not exist!"))
     }
@@ -521,31 +479,25 @@ class BookControllerTest {
         val amount = 2
 
         val book = given()
-            .log().all()
             .`when`()
             .get("/$id")
             .then()
-            .log().all()
             .statusCode(200)
             .extract()
             .`as`(Book::class.java)
 
         given()
-            .log().all()
             .param("amount", amount)
             .`when`()
             .post("/$id/buy")
             .then()
-            .log().all()
             .statusCode(200)
             .body("quantityInStock", equalTo(book.quantityInStock - amount))
 
         given()
-            .log().all()
             .`when`()
             .get("/$id")
             .then()
-            .log().all()
             .statusCode(200)
             .body("quantityInStock", equalTo(book.quantityInStock - amount))
     }
@@ -555,12 +507,10 @@ class BookControllerTest {
         val id = 12345
 
         given()
-            .log().all()
             .param("amount", 1)
             .`when`()
             .post("/$id/buy")
             .then()
-            .log().all()
             .statusCode(404)
             .body("errors", equalTo("Book with id [$id] does not exist!"))
     }
@@ -571,12 +521,10 @@ class BookControllerTest {
         val id = 1
 
         given()
-            .log().all()
             .param("amount", amount)
             .`when`()
             .post("/$id/buy")
             .then()
-            .log().all()
             .statusCode(400)
             .body("errors", equalTo("Book amount to buy must be positive!"))
     }
@@ -587,12 +535,10 @@ class BookControllerTest {
         val amount = 11
 
         given()
-            .log().all()
             .param("amount", amount)
             .`when`()
             .post("/$id/buy")
             .then()
-            .log().all()
             .statusCode(400)
             .body("errors", equalTo("Book with id [$id] has less than [$amount] copies left in stock!"))
     }
