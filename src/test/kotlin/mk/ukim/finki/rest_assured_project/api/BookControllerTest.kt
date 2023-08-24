@@ -26,16 +26,9 @@ import kotlin.math.ceil
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BookControllerTest {
 
-    private val baseUrl = "/api/books"
-    private val BLANK_ISBN_ERROR_MESSAGE = "Book ISBN must not be blank!"
-    private val BLANK_TITLE_ERROR_MESSAGE = "Book title must not be blank!"
-    private val NONPOSITIVE_PRICE_ERROR_MESSAGE = "Book price must not be negative!"
-    private val NONPOSITIVE_QUANTITY_ERROR_MESSAGE = "Book quantity in stock must not be negative!"
-    private val INVALID_ISBN_ERROR_MESSAGE = "ISBN is not valid!"
-    private val ISBN_NOT_UNIQUE_ERROR_MESSAGE = "A book with this ISBN already exists in the database!"
-
     @LocalServerPort
     private var port: Int = 0
+    private val baseUrl = "/api/books"
 
     @BeforeAll
     fun setup() {
@@ -43,6 +36,13 @@ class BookControllerTest {
         RestAssured.basePath = baseUrl
         RestAssured.filters(RequestLoggingFilter(), ResponseLoggingFilter())
     }
+
+    private val BLANK_ISBN_ERROR_MESSAGE = "Book ISBN must not be blank!"
+    private val BLANK_TITLE_ERROR_MESSAGE = "Book title must not be blank!"
+    private val NONPOSITIVE_PRICE_ERROR_MESSAGE = "Book price must not be negative!"
+    private val NONPOSITIVE_QUANTITY_ERROR_MESSAGE = "Book quantity in stock must not be negative!"
+    private val INVALID_ISBN_ERROR_MESSAGE = "ISBN is not valid!"
+    private val ISBN_NOT_UNIQUE_ERROR_MESSAGE = "A book with this ISBN already exists in the database!"
 
     @Test
     fun `should return a list of books when given default parameters`() {
@@ -84,8 +84,6 @@ class BookControllerTest {
             .body("totalPages", equalTo(totalPages))
             .body("numberOfElements", equalTo(numberOfElements))
     }
-
-    // TODO: Should I add test for intermediary page?
 
     @ParameterizedTest
     @ValueSource(strings = ["1", "2", "3", "10"])
@@ -205,7 +203,7 @@ class BookControllerTest {
     }
 
     @Test
-    fun `should return not found and appropriate error message when searching for book with non-existant isbn`() {
+    fun `should return not found and appropriate error message when searching for book with non-existent isbn`() {
         val isbn = "9780136006176"
 
         given()
