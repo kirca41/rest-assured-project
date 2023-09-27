@@ -4,12 +4,15 @@ import mk.ukim.finki.rest_assured_project.model.Author
 import mk.ukim.finki.rest_assured_project.model.Book
 import mk.ukim.finki.rest_assured_project.model.dtos.BookAddDto
 import mk.ukim.finki.rest_assured_project.model.dtos.BookEditDto
+import mk.ukim.finki.rest_assured_project.model.enums.Category
 import mk.ukim.finki.rest_assured_project.model.exceptions.AuthorDoesNotExistException
 import mk.ukim.finki.rest_assured_project.model.exceptions.BookDoesNotExistException
 import mk.ukim.finki.rest_assured_project.model.exceptions.NotEnoughBooksAvailableInStockException
 import mk.ukim.finki.rest_assured_project.repository.AuthorRepository
 import mk.ukim.finki.rest_assured_project.repository.BookRepository
 import mk.ukim.finki.rest_assured_project.service.BookService
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
@@ -18,6 +21,11 @@ class BookServiceImpl(
     val bookRepository: BookRepository,
     val authorRepository: AuthorRepository
 ) : BookService {
+
+    override fun getAll(pageable: Pageable): Page<Book> = this.bookRepository.findAll(pageable)
+
+    override fun getAllByCategory(category: Category, pageable: Pageable): Page<Book> =
+        this.bookRepository.findAllByCategory(category, pageable)
 
     override fun getBookById(id: Long): Book {
         return this.bookRepository.findByIdOrNull(id)

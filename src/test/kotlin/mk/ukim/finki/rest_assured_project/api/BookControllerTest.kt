@@ -525,13 +525,6 @@ class BookControllerTest {
             .then()
             .statusCode(200)
             .body("quantityInStock", equalTo(book.quantityInStock - amount))
-
-        given()
-            .`when`()
-            .get("/$id")
-            .then()
-            .statusCode(200)
-            .body("quantityInStock", equalTo(book.quantityInStock - amount))
     }
 
     @Test

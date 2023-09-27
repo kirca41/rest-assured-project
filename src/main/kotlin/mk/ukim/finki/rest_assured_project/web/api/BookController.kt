@@ -17,7 +17,6 @@ import java.net.URI
 @RestController
 @RequestMapping("/api/books")
 class BookController(
-    val bookRepository: BookRepository,
     val bookService: BookService
 ) {
 
@@ -33,9 +32,9 @@ class BookController(
         val pageable = PageRequest.of(page, size, sortingCriteria)
 
         return if (category != null) {
-            this.bookRepository.findAllByCategory(category, pageable)
+            this.bookService.getAllByCategory(category, pageable)
         } else {
-            this.bookRepository.findAll(pageable)
+            this.bookService.getAll(pageable)
         }.let { ResponseEntity.ok(it) }
     }
 
